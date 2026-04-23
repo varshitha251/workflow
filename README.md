@@ -11,10 +11,8 @@ This repository contains an n8n workflow for automation.
 3. Click Import → From File
 4. Select the JSON file
 
-## 🚀 Workflow File
+
 
 * My workflow.json
 
-## ⚠️ Note
 
-Make sure to add your own credentials (API keys, tokens) before running.
