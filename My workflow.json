@@ -1,0 +1,249 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bf414ef7-105c-4cd8-8906-5d8209c4951d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e85f1b60-e860-47cc-a026-c131c05a0660",
+              "name": "product",
+              "value": "iphone",
+              "type": "string"
+            },
+            {
+              "id": "0d4759e7-b288-492e-90d2-972ece3bcd03",
+              "name": "budget",
+              "value": "50000",
+              "type": "string"
+            },
+            {
+              "id": "8b1a0a29-beeb-45ff-9436-c15a891f78ea",
+              "name": "brand",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d0009282-c664-4ca5-8255-8476d2b07bd1",
+      "name": "User Input"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json;\nlet warning = [];\n\n// Normalize product input\nif (!body.product || body.product.trim() === \"\") {\n  body.product = \"phone\";\n  warning.push(\"⚠️ Product missing, default used\");\n}\n\n// Clean input\nbody.product = body.product.toLowerCase().trim();\n\n// Fix budget\nif (!body.budget || isNaN(body.budget)) {\n  body.budget = 50000;\n  warning.push(\"⚠️ Invalid budget, default used\");\n}\n\n// Clean brand\nif (body.brand) {\n  body.brand = body.brand.toLowerCase().trim();\n}\n\n// General typo correction (multi-category)\nconst corrections = {\n  \"iphon\": \"iphone\",\n  \"samsng\": \"samsung\",\n  \"laptp\": \"laptop\",\n  \"headphne\": \"headphones\",\n  \"biryni\": \"biryani\",\n  \"piza\": \"pizza\",\n  \"shoos\": \"shoes\"\n};\n\nif (corrections[body.product]) {\n  body.product = corrections[body.product];\n  warning.push(`🔄 Corrected product to ${body.product}`);\n}\n\nreturn [\n  {\n    json: {\n      body,\n      warning\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "53d1431a-c813-4100-bd01-fa27322df0b5",
+      "name": "Input Validator Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const product = $json.body.product.toLowerCase();\n\n// Multi-category dataset with multiple platforms\nconst data = [\n  // 📱 Phones\n  { title: \"iPhone 14\", price: 49000, rating: 4.4, source: \"Amazon\" },\n  { title: \"iPhone 14\", price: 48000, rating: 4.3, source: \"Flipkart\" },\n  { title: \"iPhone 14\", price: 48500, rating: 4.2, source: \"Croma\" },\n\n  { title: \"Samsung Galaxy S23\", price: 47000, rating: 4.3, source: \"Amazon\" },\n  { title: \"Samsung Galaxy S23\", price: 46000, rating: 4.2, source: \"Flipkart\" },\n\n  // 💻 Laptops\n  { title: \"Dell Laptop i5\", price: 55000, rating: 4.3, source: \"Amazon\" },\n  { title: \"Dell Laptop i5\", price: 53000, rating: 4.2, source: \"Croma\" },\n\n  { title: \"HP Laptop i7\", price: 65000, rating: 4.4, source: \"Amazon\" },\n  { title: \"HP Laptop i7\", price: 63000, rating: 4.3, source: \"Flipkart\" },\n\n  // 📺 TVs\n  { title: \"Samsung TV 55 inch\", price: 60000, rating: 4.2, source: \"Amazon\" },\n  { title: \"Samsung TV 55 inch\", price: 58000, rating: 4.1, source: \"Flipkart\" },\n\n  { title: \"LG Smart TV 50 inch\", price: 55000, rating: 4.3, source: \"Croma\" },\n  { title: \"LG Smart TV 50 inch\", price: 53000, rating: 4.2, source: \"Amazon\" },\n\n  // 🎧 Accessories\n  { title: \"Sony Headphones\", price: 8000, rating: 4.5, source: \"Reliance Digital\" },\n  { title: \"Sony Headphones\", price: 7800, rating: 4.4, source: \"Flipkart\" },\n\n  { title: \"Boat Earbuds\", price: 2000, rating: 4.1, source: \"Amazon\" },\n  { title: \"Boat Earbuds\", price: 1800, rating: 4.0, source: \"Flipkart\" },\n\n  // 👟 Clothing / Shoes\n  { title: \"Nike Shoes\", price: 3000, rating: 4.2, source: \"Amazon\" },\n  { title: \"Nike Shoes\", price: 2800, rating: 4.1, source: \"Flipkart\" },\n\n  { title: \"Adidas T-Shirt\", price: 1200, rating: 4.0, source: \"Amazon\" },\n  { title: \"Adidas T-Shirt\", price: 1100, rating: 3.9, source: \"Myntra\" },\n\n  // 🍔 Food (cross-platform comparison)\n  { title: \"Chicken Biryani\", price: 250, rating: 4.5, source: \"Swiggy\" },\n  { title: \"Chicken Biryani\", price: 230, rating: 4.3, source: \"Zomato\" },\n\n  { title: \"Veg Pizza\", price: 400, rating: 4.2, source: \"Swiggy\" },\n  { title: \"Veg Pizza\", price: 380, rating: 4.1, source: \"Zomato\" }\n];\n\n// Filter based on user input\nconst filtered = data.filter(item =>\n  item.title.toLowerCase().includes(product)\n);\n\n// Return filtered or fallback\nreturn filtered.length\n  ? filtered.map(i => ({ json: i }))\n  : data.map(i => ({ json: i }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "cb9b229e-4b7f-459e-966c-2dd4e612533e",
+      "name": "Search Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    title: item.json.title,\n    price: Number(item.json.price),\n    rating: Number(item.json.rating),\n    source: item.json.source\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "96b3db84-0ac2-4554-bc22-6eb3cad5dcc1",
+      "name": "Cleaner Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "ab8bd865-6493-4a25-8408-dd3f64c000ed",
+      "name": "Budget Filter Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const brand = $items(\"Input Validator Agent\")[0].json.body.brand;\n\n// If no brand → return all items\nif (!brand || brand === \"\") return items;\n\n// Filter by brand\nreturn items.filter(item =>\n  item.json.title.toLowerCase().includes(brand.toLowerCase())\n);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "133ffbb4-b145-473b-ac9d-1b040e162ad7",
+      "name": "Brand Filter Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sort items based on price (ascending)\nitems.sort((a, b) => a.json.price - b.json.price);\n\n// Return sorted list (best deal first)\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "ee943b5a-c681-4371-8461-e687b0762c08",
+      "name": "Comparison Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const best = items[0];\n\n// Get user input from Validator\nconst body = $items(\"Input Validator Agent\")[0].json.body;\nconst warnings = $items(\"Input Validator Agent\")[0].json.warning || [];\n\nreturn [\n  {\n    json: {\n      message: `🏆 Best Deal Found!\n\n📦 Product: ${best.title}\n🏪 Platform: ${best.source}\n💰 Price: ₹${best.price}\n⭐ Rating: ${best.rating}\n\n${body.brand ? \"✅ Based on your preferred brand\" : \"🔥 Best overall deal\"}\n${body.budget ? \"💰 Within your budget\" : \"\"}\n\n${warnings.length ? \"\\n\" + warnings.join(\"\\n\") : \"\"}\n\n👉 Recommendation: BUY NOW`\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "202bfd49-9af5-4f8f-995c-2c390f45a1e7",
+      "name": "Notify Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "User Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Input": {
+      "main": [
+        [
+          {
+            "node": "Input Validator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validator Agent": {
+      "main": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Agent": {
+      "main": [
+        [
+          {
+            "node": "Cleaner Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleaner Agent": {
+      "main": [
+        [
+          {
+            "node": "Budget Filter Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Budget Filter Agent": {
+      "main": [
+        [
+          {
+            "node": "Brand Filter Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand Filter Agent": {
+      "main": [
+        [
+          {
+            "node": "Comparison Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comparison Agent": {
+      "main": [
+        [
+          {
+            "node": "Notify Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Agent": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4bb6eeee-d33d-414c-bfca-e80d5bbac341",
+  "meta": {
+    "instanceId": "0c7955258a9b1f5c34dba5c7506f5990738130b1421727628bfa887321f214a4"
+  },
+  "id": "vJ3SgCcpnUNigQVI",
+  "tags": []
+}
